@@ -27,6 +27,7 @@ class WP_Privacy_Test_Plugin {
 
 	protected function __construct() {
 		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
+		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_exporter' ) );
 	}
 
 	function add_privacy_policy_content() {
@@ -48,6 +49,37 @@ class WP_Privacy_Test_Plugin {
 			);
 		}
 	}
+
+	function register_exporter( $exporters ) {
+		$exporters['privacy-test-plugin'] = array(
+			'exporter_friendly_name' => __( 'Privacy Test Plugin' ),
+			'callback'               => array( $this, 'personal_data_exporter' )
+		);
+
+		return $exporters;
+	}
+
+	function personal_data_exporter( $email_address, $page = 1 ) {
+		$data = array(
+			'name'  => 'Tracking ID',
+			'value' => md5( $page )
+		);
+
+		$export_items = array(
+			array(
+				'group_id'    => 'privacy-test-plugin',
+				'group_label' => __( 'Privacy Test Plugin', 'wpprivacytestplugin' ),
+				'item_id'     => "ptp-{$page}",
+				'data'        => array( $data ),
+			)
+		);
+
+		return array(
+			'data' => $export_items,
+			'done' => ( 2 === $page ),
+		);
+	}
+
 }
 
 WP_Privacy_Test_Plugin::getInstance();
