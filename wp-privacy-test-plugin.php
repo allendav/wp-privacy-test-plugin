@@ -28,6 +28,7 @@ class WP_Privacy_Test_Plugin {
 	protected function __construct() {
 		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
 		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_exporter' ) );
+		add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_eraser' ) );
 	}
 
 	function add_privacy_policy_content() {
@@ -80,6 +81,66 @@ class WP_Privacy_Test_Plugin {
 		);
 	}
 
+	function register_eraser( $erasers ) {
+		$erasers['privacy-test-plugin'] = array(
+			'eraser_friendly_name' => __( 'Privacy Test Plugin' ),
+			'callback'             => array( $this, 'personal_data_eraser' )
+		);
+
+		return $erasers;
+	}
+
+	function personal_data_eraser( $email_address, $page = 1 ) {
+		$state = get_option( 'privacy-test-plugin-eraser-state', 0 );
+		$state = (int) $state;
+
+		$retention_messages = array(
+			'Order 1234 was not erased because it is less than 180 days old',
+			'Comment 5678 was not erased because it was a really good comment'
+		);
+
+		// All of the personal data found for this user was removed.
+		if ( 0 === $state ) {
+			$items_removed = true;
+			$items_retained = false;
+			$messages = array();
+		}
+
+		// Personal data was found for this user but some of the personal data found was not removed.
+		if ( 1 === $state ) {
+			$items_removed = true;
+			$items_retained = true;
+			$messages = $retention_messages;
+		}
+
+		// No personal data was found for this user.
+		if ( 2 === $state ) {
+			$items_removed = false;
+			$items_retained = false;
+			$messages = array();
+		}
+
+		// Personal data was found for this user but was not removed.
+		if ( 3 === $state ) {
+			$items_removed = false;
+			$items_retained = true;
+			$messages = $retention_messages;
+		}
+
+		$state = $state + 1;
+		if ( 4 === $state ) {
+			$state = 0;
+		}
+
+		update_option( 'privacy-test-plugin-eraser-state', $state );
+
+		return array(
+			'items_removed' => $items_removed,
+			'items_retained' => $items_retained,
+			'messages' => $messages,
+			'done' => true
+		);
+	}
 }
 
 WP_Privacy_Test_Plugin::getInstance();
