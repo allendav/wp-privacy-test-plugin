@@ -27,7 +27,7 @@ class WP_Privacy_Test_Plugin {
 
 	protected function __construct() {
 		add_action( 'admin_init', array( $this, 'add_privacy_policy_content' ) );
-		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_exporter' ) );
+		add_filter( 'wp_privacy_personal_data_exporters', array( $this, 'register_exporter' ), 8 );
 		add_filter( 'wp_privacy_personal_data_erasers', array( $this, 'register_eraser' ) );
 	}
 
